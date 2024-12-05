@@ -1,0 +1,6 @@
+@TFT_HostAddress = http://localhost:5212
+
+GET {{TFT_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
