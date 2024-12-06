@@ -10,7 +10,7 @@ using TFT.Data;
 namespace TFT.Migrations
 {
     [DbContext(typeof(TftContext))]
-    [Migration("20241205155453_InitialCreate")]
+    [Migration("20241206124143_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -28,7 +28,11 @@ namespace TFT.Migrations
                     b.Property<int>("Placement")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("TeamComposition")
+                    b.Property<string>("TraitComposition")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UnitComposition")
                         .IsRequired()
                         .HasColumnType("TEXT");
 

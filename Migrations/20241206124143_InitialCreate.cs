@@ -17,7 +17,8 @@ namespace TFT.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Placement = table.Column<int>(type: "INTEGER", nullable: false),
-                    TeamComposition = table.Column<string>(type: "TEXT", nullable: false)
+                    TraitComposition = table.Column<string>(type: "TEXT", nullable: false),
+                    UnitComposition = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {

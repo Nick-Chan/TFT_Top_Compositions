@@ -16,6 +16,7 @@ namespace TFT.Data
     {
         public int Id { get; set; }
         public int Placement { get; set; }
-        public string TeamComposition { get; set; }
+        public string TraitComposition { get; set; }
+        public string UnitComposition { get; set; }
     }
 }

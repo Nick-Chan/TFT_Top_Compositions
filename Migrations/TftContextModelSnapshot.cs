@@ -25,7 +25,11 @@ namespace TFT.Migrations
                     b.Property<int>("Placement")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("TeamComposition")
+                    b.Property<string>("TraitComposition")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UnitComposition")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
