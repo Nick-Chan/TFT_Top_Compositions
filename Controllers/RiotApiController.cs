@@ -61,7 +61,7 @@ namespace TFT.Controllers
             try
             {
                 // Integers to be set
-                int playerCount = 40; // Number of players to loop through
+                int playerCount = 50; // Number of players to loop through
                 int startTimeDays = -1; // Start time for history of matches
 
                 // Initialize API rate limiter
@@ -131,6 +131,7 @@ namespace TFT.Controllers
                     { "TFT13_Lux", "Lux" },
                     { "TFT13_Shooter", "Maddie" },
                     { "TFT13_Malzahar", "Malzahar" },
+                    { "TFT13_MissMage", "Mel" },
                     { "TFT13_Mordekaiser", "Mordekaiser" },
                     { "TFT13_Morgana", "Morgana" },
                     { "TFT13_Nami", "Nami" },
@@ -158,8 +159,10 @@ namespace TFT.Controllers
                     { "TFT13_Prime", "Vander" },
                     { "TFT13_Vex", "Vex" },
                     { "TFT13_Vi", "Vi" },
+                    { "TFT13_Viktor", "Viktor" },
                     { "TFT13_Red", "Violet" },
                     { "TFT13_Vladimir", "Vladimir" },
+                    { "TFT13_Warwick", "Warwick" },
                     { "TFT13_Zeri", "Zeri" },
                     { "TFT13_Ziggs", "Ziggs" },
                     { "TFT13_Zoe", "Zoe" },
@@ -233,7 +236,9 @@ namespace TFT.Controllers
 
                                     // Ensure we are only processing traits that meet the criteria (num_units > 2)
                                     var validTraits = participant.traits
-                                        .Where(t => t.num_units > 3)
+                                        .Where(t => t.tier_current > 0)
+                                        .OrderByDescending(t => t.tier_current)
+                                        .ThenByDescending(t => t.num_units)
                                         .ToList();
 
                                     // Handle the first trait
@@ -247,23 +252,6 @@ namespace TFT.Controllers
                                         else
                                         {
                                             traitName += firstTrait.name + " ";
-                                        }
-
-                                        // Process the remaining traits (sorted alphabetically by name)
-                                        var remainingTraits = validTraits.Skip(1)
-                                            .OrderBy(t => traitNameMap.TryGetValue(t.name, out var mappedName) ? mappedName : t.name)
-                                            .ToList();
-
-                                        foreach (var trait in remainingTraits)
-                                        {
-                                            if (traitNameMap.TryGetValue(trait.name, out var mappedName))
-                                            {
-                                                traitName += mappedName + " ";
-                                            }
-                                            else
-                                            {
-                                                traitName += trait.name + " ";
-                                            }
                                         }
                                     }
 
@@ -346,11 +334,11 @@ namespace TFT.Controllers
                 20 requests every 1 seconds(s)
                 100 requests every 2 minutes(s)
             */
-            const int shortLimit = 18;
+            const int shortLimit = 19;
             const int shortWindowSeconds = 1;
-            const int longLimit = 90;
+            const int longLimit = 95;
             const int longWindowSeconds = 120;
-            const int bufferMilliseconds = 100; // Add a buffer of 100ms for safety
+            const int bufferMilliseconds = 50; // Add a buffer of 100ms for safety
 
             // Check short window (20 requests per second)
             if (rateLimiter.ApiCallCount % shortLimit == 0)
@@ -404,7 +392,9 @@ namespace TFT.Controllers
                         TeamComposition = g.Key,
                         AvgPlacement = g.Average(tp => tp.Placement),
                         Occurrences = g.Count(),
-                        PlayRate = (double)g.Count() / totalGames // Calculate play rate
+                        PlayRate = (double)g.Count() / totalGames,
+                        Wins = g.Count(tp => tp.Placement == 1),
+                        Top4 = g.Count(tp => tp.Placement <= 4)
                     })
                     .OrderBy(result => result.AvgPlacement)
                     .ToListAsync();
@@ -417,18 +407,19 @@ namespace TFT.Controllers
             }
         }
 
-
         [HttpGet("unit-compositions-by-traits")]
         public async Task<IActionResult> GetUnitCompositionsByTraits(string traitComposition)
         {
             try
             {
-                // Calculate total number of games
-                var totalGames = await _context.TeamPlacements.CountAsync();
+                // Calculate the total number of games for the specific trait composition
+                var totalTraitGames = await _context.TeamPlacements
+                    .Where(tp => tp.TraitComposition == traitComposition)
+                    .CountAsync();
 
-                if (totalGames == 0)
+                if (totalTraitGames == 0)
                 {
-                    return Ok(new { Message = "No games found in the database." });
+                    return Ok(new { Message = "No games found for the specified trait composition." });
                 }
 
                 var results = await _context.TeamPlacements
@@ -439,7 +430,7 @@ namespace TFT.Controllers
                         UnitComposition = g.Key,
                         Occurrences = g.Count(),
                         AvgPlacement = g.Average(tp => tp.Placement),
-                        PlayRate = (double)g.Count() / totalGames // Calculate play rate
+                        PlayRate = (double)g.Count() / totalTraitGames
                     })
                     .OrderByDescending(result => result.Occurrences)
                     .ThenBy(result => result.AvgPlacement)
@@ -453,5 +444,6 @@ namespace TFT.Controllers
                 return StatusCode(500, $"Error: {ex.Message}");
             }
         }
+
     }
 }

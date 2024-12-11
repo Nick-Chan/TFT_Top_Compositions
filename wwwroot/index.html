@@ -26,6 +26,20 @@
             background-color: #f4f4f4;
         }
 
+        td:nth-child(3),
+        td:nth-child(4),
+        td:nth-child(5),
+        td:nth-child(6) {
+            width: 5%;
+        }
+
+        th:nth-child(3),
+        th:nth-child(4),
+        th:nth-child(5),
+        th:nth-child(6) {
+            width: 5%;
+        }
+
         button {
             padding: 5px 10px;
             font-size: 14px;
@@ -56,7 +70,7 @@
             display: none;
         }
 
-        .play-rate, .avg-placement {
+        .play-rate, .avg-placement, .win-rate, .top-4 {
             color: white; /* Ensure text contrasts with background */
             font-weight: bold;
         }
@@ -69,9 +83,12 @@
             <tr>
                 <th></th>
                 <th>Trait Composition</th>
-                <th>Average Placement</th>
+                <th>Avg Place</th>
+                <th>Win Rate</th>
+                <th>Top 4</th>
                 <th>Play Rate</th>
-                <th>Common Units</th>
+                <th>Core Units</th>
+                <th>Flex Units</th>
             </tr>
         </thead>
         <tbody>
@@ -80,22 +97,49 @@
     </table>
 
     <script>
-        // Helper function to calculate background color for Play Rate
+
+        // Helper function to calculate background colour for Play Rate
         function getPlayRateBackgroundColor(playRate, minPlayRate, maxPlayRate) {
             const normalized = (playRate - minPlayRate) / (maxPlayRate - minPlayRate); // Normalize playRate (0 to 1)
-            const red = normalized < 0.5 ? 255 : Math.round(255 * (1 - (normalized - 0.5) * 2)); // Red decreases after mid
-            const green = normalized > 0.5 ? 255 : Math.round(255 * (normalized * 2)); // Green increases until mid
+            const red = normalized < 0.5 ? 160 : Math.round(160 * (1 - (normalized - 0.5) * 2)); // Red decreases after mid
+            const green = normalized > 0.5 ? 160 : Math.round(160 * (normalized * 2)); // Green increases until mid
             const blue = 0; // No blue component
             return `rgb(${red}, ${green}, ${blue})`; // Create gradient color
         }
 
-        // Helper function to calculate background color for Average Placement
+        // Helper function to calculate background colour for Average Placement
         function getAvgPlacementBackgroundColor(avgPlacement, minAvgPlacement, maxAvgPlacement) {
-            const normalized = (avgPlacement - minAvgPlacement) / (maxAvgPlacement - minAvgPlacement); // Normalize (0 to 1)
-            const green = normalized < 0.5 ? 255 : Math.round(255 * (1 - (normalized - 0.5) * 2)); // Green decreases after mid
-            const red = normalized > 0.5 ? 255 : Math.round(255 * (normalized * 2)); // Red increases until mid
-            const blue = 0; // No blue component
-            return `rgb(${red}, ${green}, ${blue})`; // Create gradient color
+            const normalized = (avgPlacement - minAvgPlacement) / (maxAvgPlacement - minAvgPlacement);
+            const green = normalized < 0.5 ? 160 : Math.round(160 * (1 - (normalized - 0.5) * 2)); 
+            const red = normalized > 0.5 ? 160 : Math.round(160 * (normalized * 2));
+            const blue = 0;
+            return `rgb(${red}, ${green}, ${blue})`;
+        }
+
+        // Helper function to calculate background colour for Win Rate
+        function getWinRateBackgroundColor(winRate, minWinRate, maxWinRate) {
+            const normalized = maxWinRate !== minWinRate
+                ? (winRate - minWinRate) / (maxWinRate - minWinRate)
+                : 0.5; // Default mid-point if all values are the same
+
+            const green = normalized > 0.5 ? 160 : Math.round(160 * (normalized * 2));
+            const red = normalized < 0.5 ? 160 : Math.round(160 * (1 - (normalized - 0.5) * 2));
+            const blue = 0;
+
+            return `rgb(${red}, ${green}, ${blue})`;
+        }
+
+        // Helper function to calculate background colour for Top 4
+        function getTop4BackgroundColor(top4, minTop4, maxTop4) {
+            const normalized = maxTop4 !== minTop4
+                ? (top4 - minTop4) / (maxTop4 - minTop4)
+                : 0.5; // Default mid-point if all values are the same
+
+            const green = normalized > 0.5 ? 160 : Math.round(160 * (normalized * 2));
+            const red = normalized < 0.5 ? 160 : Math.round(160 * (1 - (normalized - 0.5) * 2));
+            const blue = 0;
+
+            return `rgb(${red}, ${green}, ${blue})`;
         }
 
         // Fetch data from the main API and populate the table
@@ -115,6 +159,7 @@
                 // Determine min and max values for conditional formatting
                 const playRates = data.map(row => row.playRate);
                 const avgPlacements = data.map(row => row.avgPlacement);
+                const winRates = data.map(row => row.wins);
 
                 const minPlayRate = Math.min(...playRates);
                 const maxPlayRate = Math.max(...playRates);
@@ -122,9 +167,23 @@
                 const minAvgPlacement = Math.min(...avgPlacements);
                 const maxAvgPlacement = Math.max(...avgPlacements);
 
+                const topWinRatesNormalized = data.map(row => row.occurrences > 0 ? (row.wins / row.occurrences) : 0);
+                const minWinRates = Math.min(...topWinRatesNormalized);
+                const maxWinRates = Math.max(...topWinRatesNormalized);
+
+                const top4RatesNormalized = data.map(row => row.occurrences > 0 ? (row.top4 / row.occurrences) : 0);
+                const minTop4 = Math.min(...top4RatesNormalized);
+                const maxTop4 = Math.max(...top4RatesNormalized);
+
                 // Populate the table with the results
                 for (const row of data) {
+                    // Common units and Flex units
                     const commonUnits = await fetchCommonUnits(row.teamComposition);
+                    const flexUnits = await fetchFlexUnits(row.teamComposition);
+
+                    // Calculate Win Rate and Top 4 Rate
+                    const winRate = row.occurrences > 0 ? (row.wins / row.occurrences) : 0;
+                    const top4Rate = row.occurrences > 0 ? (row.top4 / row.occurrences) : 0;
 
                     const newRow = document.createElement('tr');
 
@@ -137,6 +196,26 @@
                         maxAvgPlacement
                     );
                     avgPlacementCell.textContent = row.avgPlacement.toFixed(2);
+
+                    // Create a cell for Win Rates with conditional formatting
+                    const winRateCell = document.createElement('td');
+                    winRateCell.classList.add('win-rate');
+                    winRateCell.style.backgroundColor = getWinRateBackgroundColor(
+                        winRate,
+                        minWinRates,
+                        maxWinRates
+                    );
+                    winRateCell.textContent = winRate.toFixed(2);
+
+                    // Create a cell for Top 4 with conditional formatting
+                    const top4Cell = document.createElement('td');
+                    top4Cell.classList.add('top-4');
+                    top4Cell.style.backgroundColor = getTop4BackgroundColor(
+                        top4Rate,
+                        minTop4,
+                        maxTop4
+                    );
+                    top4Cell.textContent = top4Rate.toFixed(2);
 
                     // Create a cell for Play Rate with conditional formatting
                     const playRateCell = document.createElement('td');
@@ -153,20 +232,22 @@
                             <td>${row.teamComposition}</td>
                         `;
                     newRow.appendChild(avgPlacementCell); // Append Average Placement cell
+                    newRow.appendChild(winRateCell); // Append Win Rate cell
+                    newRow.appendChild(top4Cell); // Append Top 4 Rate cell
                     newRow.appendChild(playRateCell); // Append Play Rate cell
                     newRow.innerHTML += `<td>${commonUnits}</td>`;
+                    newRow.innerHTML += `<td>${flexUnits}</td>`;
                     tableBody.appendChild(newRow);
 
                     // Add a placeholder row for the nested table
                     const nestedRow = document.createElement('tr');
                     nestedRow.classList.add('hidden'); // Hidden by default
                     nestedRow.innerHTML = `
-                            <td colspan="5">
+                            <td colspan="8">
                                 <table class="nested-table">
                                     <thead>
                                         <tr>
                                             <th>Unit Composition</th>
-                                            <th>Average Placement</th>
                                             <th>Play Rate</th>
                                         </tr>
                                     </thead>
@@ -193,6 +274,19 @@
                 const totalRows = data.length;
                 const unitOccurrences = {};
 
+                const customOrder = [
+                    "Amumu", "Darius", "Draven", "Irelia", "Lux", "Maddie", "Morgana", "Powder",
+                    "Singed", "Steb", "Trundle", "Vex", "Violet", "Zyra", "Akali", "Camille",
+                    "Leona", "Nocturne", "Rell", "Renata Glasc", "Sett", "Tristana", "Urgot",
+                    "Vander", "Vladimir", "Zeri", "Ziggs", "Blitzcrank", "Cassiopeia", "Ezreal",
+                    "Gangplank", "Kog'Maw", "Loris", "Nunu Willump", "Renni", "Scar", "Smeech",
+                    "Swain", "Twisted Fate", "Ambessa", "Corki", "Dr Mundo", "Ekko", "Elise",
+                    "Garen", "Heimerdinger", "Illaoi", "Nami", "Silco", "Twitch", "Vi", "Zoe",
+                    "Caitlyn", "Jayce", "Jinx", "LeBlanc", "Malzahar", "Mordekaiser", "Rumble",
+                    "Sevika", "Mel", "Viktor", "Warwick"
+                ];
+                const getOrderIndex = (unit) => customOrder.indexOf(unit) >= 0 ? customOrder.indexOf(unit) : Infinity;
+
                 // Calculate unit occurrences across all unit compositions
                 data.forEach(unitRow => {
                     const units = unitRow.unitComposition.split(', ');
@@ -205,10 +299,61 @@
                     });
                 });
 
-                // Filter and join common units (≥ 70% of total rows)
+                // Filter and join common units (≥ x% of total rows)
                 return Object.entries(unitOccurrences)
-                    .filter(([unit, count]) => count / totalRows >= 0.70)
+                    .filter(([unit, count]) => count / totalRows >= 0.50)
                     .map(([unit]) => unit)
+                    .sort((a, b) => getOrderIndex(a) - getOrderIndex(b))
+                    .join(', ');
+            } catch (error) {
+                console.error("Error fetching common units: " + error.message);
+                return "Error";
+            }
+        }
+
+        // Fetch common units for a given trait composition
+        async function fetchFlexUnits(traitComposition) {
+            try {
+                const response = await fetch(`https://localhost:7057/api/RiotApi/unit-compositions-by-traits?traitComposition=${encodeURIComponent(traitComposition)}`);
+                if (!response.ok) {
+                    throw new Error(`API call failed: ${response.statusText}`);
+                }
+                const data = await response.json();
+
+                const totalRows = data.length;
+                const unitOccurrences = {};
+
+                const customOrder = [
+                    "Amumu", "Darius", "Draven", "Irelia", "Lux", "Maddie", "Morgana", "Powder",
+                    "Singed", "Steb", "Trundle", "Vex", "Violet", "Zyra", "Akali", "Camille",
+                    "Leona", "Nocturne", "Rell", "Renata Glasc", "Sett", "Tristana", "Urgot",
+                    "Vander", "Vladimir", "Zeri", "Ziggs", "Blitzcrank", "Cassiopeia", "Ezreal",
+                    "Gangplank", "Kog'Maw", "Loris", "Nunu Willump", "Renni", "Scar", "Smeech",
+                    "Swain", "Twisted Fate", "Ambessa", "Corki", "Dr Mundo", "Ekko", "Elise",
+                    "Garen", "Heimerdinger", "Illaoi", "Nami", "Silco", "Twitch", "Vi", "Zoe",
+                    "Caitlyn", "Jayce", "Jinx", "LeBlanc", "Malzahar", "Mordekaiser", "Rumble",
+                    "Sevika", "Mel", "Viktor", "Warwick"
+                ];
+                const getOrderIndex = (unit) => customOrder.indexOf(unit) >= 0 ? customOrder.indexOf(unit) : Infinity;
+
+                // Calculate unit occurrences across all unit compositions
+                data.forEach(unitRow => {
+                    const units = unitRow.unitComposition.split(', ');
+                    units.forEach(unit => {
+                        if (unitOccurrences[unit]) {
+                            unitOccurrences[unit]++;
+                        } else {
+                            unitOccurrences[unit] = 1;
+                        }
+                    });
+                });
+
+                // Filter and join flex units
+                return Object.entries(unitOccurrences)
+                    .filter(([unit, count]) => count / totalRows > 0.10 && count / totalRows < 0.50)
+                    .map(([unit]) => unit)
+                    .sort((a, b) => getOrderIndex(a) - getOrderIndex(b))
+                    .slice(0, 3)
                     .join(', ');
             } catch (error) {
                 console.error("Error fetching common units: " + error.message);
@@ -242,7 +387,6 @@
                         const newNestedRow = document.createElement('tr');
                         newNestedRow.innerHTML = `
                                 <td>${unitRow.unitComposition}</td>
-                                <td>${unitRow.avgPlacement.toFixed(2)}</td>
                                 <td>${unitRow.playRate.toFixed(2)}</td>
                             `;
                         nestedTableBody.appendChild(newNestedRow);
