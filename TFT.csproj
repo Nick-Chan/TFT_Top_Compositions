@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\index.html" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>
