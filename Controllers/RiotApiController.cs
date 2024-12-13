@@ -61,14 +61,14 @@ namespace TFT.Controllers
             try
             {
                 // Integers to be set
-                int playerCount = 50; // Number of players to loop through
+                int playerCount = 100; // Number of players to loop through
                 int startTimeDays = -1; // Start time for history of matches
 
                 // Initialize API rate limiter
                 var rateLimiter = new ApiRateLimiter();
                 int apiLogCount = 0;
 
-                // Dictionary mapping for Traits & Units
+                // Dictionary mapping for Traits
                 var traitNameMap = new Dictionary<string, string>
                 {
                     { "TFT13_Academy", "Academy" },
@@ -100,6 +100,7 @@ namespace TFT.Controllers
                     { "TFT13_JunkerKing", "Junker King" }
                 };
 
+                // Dictionary mapping for Units
                 var unitNameMap = new Dictionary<string, string>
                 {
                     { "TFT13_Akali", "Akali" },
@@ -124,6 +125,7 @@ namespace TFT.Controllers
                     { "TFT13_Irelia", "Irelia" },
                     { "TFT13_Jayce", "Jayce" },
                     { "TFT13_Jinx", "Jinx" },
+                    { "tft13_jinx", "Jinx" },
                     { "TFT13_KogMaw", "Kog'Maw" },
                     { "TFT13_LeBlanc", "LeBlanc" },
                     { "TFT13_Leona", "Leona" },
@@ -169,11 +171,53 @@ namespace TFT.Controllers
                     { "TFT13_Zyra", "Zyra" }
                 };
 
+                // Dictionary mapping for Items
+                var itemNameMap = new Dictionary<string, string>
+                {
+                    { "TFT_Item_AdaptiveHelm", "Adaptive Helm" },
+                    { "TFT_Item_ArchangelsStaff", "Archangel's Staff" },
+                    { "TFT_Item_Bloodthirster", "Bloodthirster" },
+                    { "TFT_Item_BlueBuff", "Blue Buff" },
+                    { "TFT_Item_BrambleVest", "Bramble Vest" },
+                    { "TFT_Item_Crownguard", "Crownguard" },
+                    { "TFT_Item_Deathblade", "Deathblade" },
+                    { "TFT_Item_DragonsClaw", "Dragon's Claw" },
+                    { "TFT_Item_GuardianAngel", "Edge of Night" },
+                    { "TFT_Item_SpectralGauntlet", "Evenshroud" },
+                    { "TFT_Item_GargoyleStoneplate", "Gargoyle Stoneplate" },
+                    { "TFT_Item_MadredsBloodrazor", "Giant Slayer" },
+                    { "TFT_Item_PowerGauntlet", "Guardbreaker" },
+                    { "TFT_Item_GuinsoosRageblade", "Guinsoo's Rageblade" },
+                    { "TFT_Item_UnstableConcoction", "Hand of Justice" },
+                    { "TFT_Item_HextechGunblade", "Hextech Gunblade" },
+                    { "TFT_Item_InfinityEdge", "Infinity Edge" },
+                    { "TFT_Item_IonicSpark", "Ionic Spark" },
+                    { "TFT_Item_JeweledGauntlet", "Jeweled Gauntlet" },
+                    { "TFT_Item_LastWhisper", "Last Whisper" },
+                    { "TFT_Item_Morellonomicon", "Morellonomicon" },
+                    { "TFT_Item_Leviathan", "Nashor's Tooth" },
+                    { "TFT_Item_FrozenHeart", "Protector's Vow" },
+                    { "TFT_Item_Quicksilver", "Quicksilver" },
+                    { "TFT_Item_RabadonsDeathcap", "Rabadon's Deathcap" },
+                    { "TFT_Item_RapidFireCannon", "Red Buff" },
+                    { "TFT_Item_Redemption", "Redemption" },
+                    { "TFT_Item_RunaansHurricane", "Runaan's Hurricane" },
+                    { "TFT_Item_SpearOfShojin", "Spear of Shojin" },
+                    { "TFT_Item_StatikkShiv", "Statikk Shiv" },
+                    { "TFT_Item_NightHarvester", "Steadfast Heart" },
+                    { "TFT_Item_SteraksGage", "Sterak's Gage" },
+                    { "TFT_Item_RedBuff", "Sunfire Cape" },
+                    { "TFT_Item_ThiefsGloves", "Thief's Gloves" },
+                    { "TFT_Item_TitansResolve", "Titan's Resolve" },
+                    { "TFT_Item_WarmogsArmor", "Warmog's Armor" }
+                };
+
                 // Start time tracking for the entire process
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
                 // Clear the TeamPlacements table
                 _context.TeamPlacements.RemoveRange(_context.TeamPlacements);
+                _context.Items.RemoveRange(_context.Items);
                 await _context.SaveChangesAsync();
 
                 // Increment API call counter and get top players
@@ -234,7 +278,7 @@ namespace TFT.Controllers
                                     string traitName = "";
                                     string unitCharacterIds = "";
 
-                                    // Ensure we are only processing traits that meet the criteria (num_units > 2)
+                                    // Ensure we are only processing traits that are active
                                     var validTraits = participant.traits
                                         .Where(t => t.tier_current > 0)
                                         .OrderByDescending(t => t.tier_current)
@@ -266,6 +310,45 @@ namespace TFT.Controllers
                                             if (unit.character_id != "TFT13_JayceSummon" && unit.character_id != "TFT13_Sion")
                                             {
                                                 unitCharacterIds += mappedName + ", ";
+
+                                                if (unit.itemNames != null)
+                                                {
+                                                    foreach (var item in unit.itemNames)
+                                                    {
+                                                        // Map item name & skip if the item is not in the map
+                                                        if (!itemNameMap.TryGetValue(item, out var itemName))
+                                                        {
+                                                            continue;
+                                                        }
+
+                                                        if (item == "TFT_Item_ThiefsGloves")
+                                                        {
+                                                            var thiefGlovesItem = new Item
+                                                            {
+                                                                Unit = mappedName,
+                                                                ItemName = itemName,
+                                                                Placement = participant.placement,
+                                                                DateTime = DateTime.Now
+                                                            };
+
+                                                            _context.Items.Add(thiefGlovesItem);
+
+                                                            break;
+                                                        }
+                                                        else
+                                                        {
+                                                            var items = new Item
+                                                            {
+                                                                Unit = mappedName,
+                                                                ItemName = itemName,
+                                                                Placement = participant.placement,
+                                                                DateTime = DateTime.Now
+                                                            };
+
+                                                            _context.Items.Add(items);
+                                                        }  
+                                                    }
+                                                }
                                             }
                                         }
                                         else
@@ -274,6 +357,45 @@ namespace TFT.Controllers
                                             if (unit.character_id != "TFT13_JayceSummon" && unit.character_id != "TFT13_Sion")
                                             {
                                                 unitCharacterIds += unit.character_id + ", ";
+
+                                                if (unit.itemNames != null)
+                                                {
+                                                    foreach (var item in unit.itemNames)
+                                                    {
+                                                        // Map item name & skip if the item is not in the map
+                                                        if (!itemNameMap.TryGetValue(item, out var itemName))
+                                                        {
+                                                            continue;
+                                                        }
+
+                                                        if (item == "TFT_Item_ThiefsGloves")
+                                                        {
+                                                            var thiefGlovesItem = new Item
+                                                            {
+                                                                Unit = unit.character_id,
+                                                                ItemName = itemName,
+                                                                Placement = participant.placement,
+                                                                DateTime = DateTime.Now
+                                                            };
+
+                                                            _context.Items.Add(thiefGlovesItem);
+
+                                                            break;
+                                                        }
+                                                        else
+                                                        {
+                                                            var items = new Item
+                                                            {
+                                                                Unit = unit.character_id,
+                                                                ItemName = itemName,
+                                                                Placement = participant.placement,
+                                                                DateTime = DateTime.Now
+                                                            };
+
+                                                            _context.Items.Add(items);
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -334,11 +456,11 @@ namespace TFT.Controllers
                 20 requests every 1 seconds(s)
                 100 requests every 2 minutes(s)
             */
-            const int shortLimit = 19;
+            const int shortLimit = 17;
             const int shortWindowSeconds = 1;
-            const int longLimit = 95;
+            const int longLimit = 90;
             const int longWindowSeconds = 120;
-            const int bufferMilliseconds = 50; // Add a buffer of 100ms for safety
+            const int bufferMilliseconds = 100; // Add a buffer
 
             // Check short window (20 requests per second)
             if (rateLimiter.ApiCallCount % shortLimit == 0)
@@ -445,5 +567,46 @@ namespace TFT.Controllers
             }
         }
 
+        [HttpGet("best-items-by-placement")]
+        public async Task<IActionResult> GetBestItemsPlacements()
+        {
+            try
+            {
+                var results = await _context.Items
+                    .GroupBy(item => new { item.Unit, item.ItemName })
+                    .Select(g => new
+                    {
+                        Unit = g.Key.Unit,
+                        ItemName = g.Key.ItemName,
+                        AvgPlacement = g.Average(i => i.Placement)
+                    })
+                    .GroupBy(result => result.Unit)
+                    .Select(g => new
+                    {
+                        Unit = g.Key,
+                        Items = g.OrderBy(r => r.AvgPlacement)
+                                 .Take(10) // Limit to top 10 items per unit
+                                 .Select(r => new
+                                 {
+                                     ItemName = r.ItemName,
+                                     AvgPlacement = Math.Round(r.AvgPlacement, 2)
+                                 })
+                                 .ToList()
+                    })
+                    .ToListAsync();
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
+        }
+
+        public class BestItemResult
+        {
+            public string Unit { get; set; }
+            public List<string> ItemNames { get; set; }
+        }
     }
 }
