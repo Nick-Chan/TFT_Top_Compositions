@@ -12,7 +12,7 @@ namespace TFT.Services
         public RiotApiService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _apiKey = "RGAPI-11dbe8c1-ad2e-42f4-b18e-54c8ba34f670"; // API Key
+            _apiKey = "RGAPI-cec83fcf-0f13-44c7-b3b1-d005818c039b"; // API Key
         }
 
         public async Task<string> GetTopPlayersAsync()

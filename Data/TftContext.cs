@@ -6,6 +6,7 @@ namespace TFT.Data
     {
         public DbSet<TeamPlacement> TeamPlacements { get; set; }
         public DbSet<Item> Items { get; set; }
+        public DbSet<UnitStat> UnitStats { get; set; }
 
         public TftContext(DbContextOptions<TftContext> options) : base(options)
         {
@@ -27,6 +28,17 @@ namespace TFT.Data
         public string Unit { get; set; }
         public string ItemName { get; set; }
         public int Placement { get; set; }
+        public DateTime DateTime { get; set; }
+    }
+
+    public class UnitStat
+    {
+        public int Id { get; set; }
+        public string Unit { get; set; }
+        public string Trait { get; set; }
+        public int Items { get; set; }
+        public int Placement { get; set; }
+        public int Level { get; set; }
         public DateTime DateTime { get; set; }
     }
 }

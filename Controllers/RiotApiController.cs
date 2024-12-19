@@ -61,7 +61,7 @@ namespace TFT.Controllers
             try
             {
                 // Integers to be set
-                int playerCount = 100; // Number of players to loop through
+                int playerCount = 50; // Number of players to loop through
                 int startTimeDays = -1; // Start time for history of matches
 
                 // Initialize API rate limiter
@@ -311,6 +311,20 @@ namespace TFT.Controllers
                                             {
                                                 unitCharacterIds += mappedName + ", ";
 
+                                                // Add to UnitStats table
+
+                                                var unitStats = new UnitStat
+                                                {
+                                                    Unit = mappedName,
+                                                    Trait = traitName,
+                                                    Items = unit.itemNames != null ? unit.itemNames.Count : 0,
+                                                    Level = unit.tier,
+                                                    Placement = participant.placement,
+                                                    DateTime = DateTime.Now
+                                                };
+
+                                                _context.UnitStats.Add(unitStats);
+
                                                 if (unit.itemNames != null)
                                                 {
                                                     foreach (var item in unit.itemNames)
@@ -460,7 +474,7 @@ namespace TFT.Controllers
             const int shortWindowSeconds = 1;
             const int longLimit = 90;
             const int longWindowSeconds = 120;
-            const int bufferMilliseconds = 100; // Add a buffer
+            const int bufferMilliseconds = 75; // Add a buffer
 
             // Check short window (20 requests per second)
             if (rateLimiter.ApiCallCount % shortLimit == 0)
@@ -556,7 +570,7 @@ namespace TFT.Controllers
                     })
                     .OrderByDescending(result => result.Occurrences)
                     .ThenBy(result => result.AvgPlacement)
-                    .Take(5) // Limit to top 5 rows
+                    .Take(8) // Limit to top x rows
                     .ToListAsync();
 
                 return Ok(results);
@@ -607,6 +621,33 @@ namespace TFT.Controllers
         {
             public string Unit { get; set; }
             public List<string> ItemNames { get; set; }
+        }
+
+        [HttpGet("unit-stats")]
+        public async Task<IActionResult> GetUnitStats(string trait)
+        {
+            try
+            {
+                var results = await _context.UnitStats
+                    .Where(us => us.Trait == trait)
+                    .GroupBy(us => us.Unit)
+                    .Select(g => new
+                    {
+                        Unit = g.Key,
+                        AvgItems = g.Average(us => us.Items),
+                        AvgLevel = g.Average(us => us.Level),
+                        AvgPlacement = g.Average(us => us.Placement)
+                    })
+                    .OrderByDescending(result => result.AvgItems)
+                    .ThenBy(result => result.AvgPlacement)
+                    .ToListAsync();
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
     }
 }
