@@ -25,43 +25,43 @@ namespace TFT.Controllers
         }
 
         [HttpGet("top-players")]
-        public async Task<IActionResult> GetTopPlayers()
+        public async Task<IActionResult> GetTopPlayers(string region)
         {
-            var data = await _riotApiService.GetTopPlayersAsync();
+            var data = await _riotApiService.GetTopPlayersAsync(region);
             return Ok(data);
         }
 
         [HttpGet("summoner/{summonerId}")]
-        public async Task<IActionResult> GetSummonerDetails(string summonerId)
+        public async Task<IActionResult> GetSummonerDetails(string region, string summonerId)
         {
-            var data = await _riotApiService.GetSummonerDetailsAsync(summonerId);
+            var data = await _riotApiService.GetSummonerDetailsAsync(region, summonerId);
             return Ok(data);
         }
 
         [HttpGet("matches/{puuid}")]
-        public async Task<IActionResult> GetMatchIds(string puuid, int start = 0, long? startTime = null, int count = 999)
+        public async Task<IActionResult> GetMatchIds(string region, string puuid, int start = 0, long? startTime = null, int count = 999)
         {
             // Use provided startTime or default to 48 hours ago
             startTime ??= DateTimeOffset.UtcNow.AddDays(-2).ToUnixTimeSeconds();
 
-            var data = await _riotApiService.GetMatchIdsAsync(puuid, start, startTime.Value, count);
+            var data = await _riotApiService.GetMatchIdsAsync(region, puuid, start, startTime.Value, count);
             return Ok(data);
         }
 
         [HttpGet("match/{matchId}")]
-        public async Task<IActionResult> GetMatchDetails(string matchId)
+        public async Task<IActionResult> GetMatchDetails(string region, string matchId)
         {
-            var data = await _riotApiService.GetMatchDetailsAsync(matchId);
+            var data = await _riotApiService.GetMatchDetailsAsync(region, matchId);
             return Ok(data);
         }
 
-        [HttpGet("api-data")]
-        public async Task<IActionResult> GetApiData()
+        [HttpGet("api-data/{region}")]
+        public async Task<IActionResult> GetApiData(string region)
         {
             try
             {
                 // Integers to be set
-                int playerCount = 50; // Number of players to loop through
+                int playerCount = 10; // Number of players to loop through
                 int startTimeDays = -1; // Start time for history of matches
 
                 // Initialize API rate limiter
@@ -223,7 +223,7 @@ namespace TFT.Controllers
                 // Increment API call counter and get top players
                 rateLimiter.ApiCallCount++;
                 apiLogCount++;
-                var jsonTopPlayersResponse = await _riotApiService.GetTopPlayersAsync();
+                var jsonTopPlayersResponse = await _riotApiService.GetTopPlayersAsync(region);
                 var players = JsonSerializer.Deserialize<Models.TopPlayers>(jsonTopPlayersResponse);
 
                 var topSummonerIds = players?.entries.Take(playerCount).Select(entry => entry.summonerId).ToList();
@@ -241,7 +241,7 @@ namespace TFT.Controllers
                     // Increment API call counter and get summoner details
                     rateLimiter.ApiCallCount++;
                     apiLogCount++;
-                    var jsonSummonerDetailsResponse = await _riotApiService.GetSummonerDetailsAsync(summonerId);
+                    var jsonSummonerDetailsResponse = await _riotApiService.GetSummonerDetailsAsync(region, summonerId);
                     var summonerDetails = JsonSerializer.Deserialize<Models.SummonerDetails>(jsonSummonerDetailsResponse);
 
                     // Get the puuid of the player
@@ -256,7 +256,7 @@ namespace TFT.Controllers
                     rateLimiter.ApiCallCount++;
                     apiLogCount++;
                     long startTime = DateTimeOffset.UtcNow.AddDays(startTimeDays).ToUnixTimeSeconds();
-                    var jsonMatchIdsResponse = await _riotApiService.GetMatchIdsAsync(puuid, 0, startTime, 999);
+                    var jsonMatchIdsResponse = await _riotApiService.GetMatchIdsAsync(region, puuid, 0, startTime, 999);
 
                     string[] matchIdsArray = jsonMatchIdsResponse;
 
@@ -266,7 +266,7 @@ namespace TFT.Controllers
                         // Increment API call counter and get match details
                         rateLimiter.ApiCallCount++;
                         apiLogCount++;
-                        var jsonMatchDetailsResponse = await _riotApiService.GetMatchDetailsAsync(matchId);
+                        var jsonMatchDetailsResponse = await _riotApiService.GetMatchDetailsAsync(region, matchId);
                         var matchDetails = JsonSerializer.Deserialize<Models.MatchIds>(jsonMatchDetailsResponse);
 
                         if (matchDetails?.info?.participants != null)
