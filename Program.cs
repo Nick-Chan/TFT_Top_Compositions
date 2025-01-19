@@ -4,14 +4,23 @@ using TFT.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load database connection string from appsettings.json
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient<RiotApiService>();
 
+
+// SQLite
+//builder.Services.AddDbContext<TftContext>(options =>
+//    options.UseSqlite("Data Source=TftAnalyzer.db"));
+
+// PostgreSQL
 builder.Services.AddDbContext<TftContext>(options =>
-    options.UseSqlite("Data Source=TftAnalyzer.db"));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddCors(options =>
 {
