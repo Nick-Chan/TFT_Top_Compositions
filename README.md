@@ -11,20 +11,20 @@ TODO: SET15
 ---
 
 ## Links 
-🔧 **Backend:** [/TFT_Top_Compositions/](https://github.com/Nick-Chan/TFT_Top_Compositions/)
+**Backend:** [/TFT_Top_Compositions/](https://github.com/Nick-Chan/TFT_Top_Compositions/)
 
-🎨 **Frontend:** [/TFT_Top_Compositions/](https://github.com/Nick-Chan/TFT_Top_Compositions_Frontend/)
+**Frontend:** [/TFT_Top_Compositions/](https://github.com/Nick-Chan/TFT_Top_Compositions_Frontend/)
 
 ---
 
 ## Stack  
 
-### 🔧 Backend  
+### Backend  
 - **C# ASP.NET Core** – Handles API requests and game data processing  
 - **Entity Framework Core** – ORM for database management  
 - **PostgreSQL** – Stores match history, compositions, and analytics  
 
-### 🎨 Frontend  
+### Frontend  
 - **CSS** – Custom styles for a sleek, user-friendly design  
 - **JavaScript** – Enhances interactivity and data processing  
 - **Vue.js** – Dynamic UI for composition filtering and visualisation  
@@ -33,22 +33,22 @@ TODO: SET15
 
 ---
 
-## 🚀 Features  
+## Features  
 
-### 🔍 **Meta Composition Analysis**  
-✔️ Highest-performing team comps in **Masters+ matches**  
+### **Meta Composition Analysis**  
+Highest-performing team comps in **Masters+ matches**  
 
-### ⚔️ **Best Items for Each Unit**  
-✔️ View **optimal item builds** based on placement data  
+### **Best Items for Each Unit**  
+View **optimal item builds** based on placement data  
 
-### 📊 **Performance Metrics**  
-✔️ Analyse **win rates, top 4 rates, and play rates** of compositions  
+### **Performance Metrics**  
+Analyse **win rates, top 4 rates, and play rates** of compositions  
 
-### 🌎 **Region-Based Filtering**  
-✔️ Select **AMERICAS, EUROPE, ASIA, SEA** to analyse localised metas  
+### **Region-Based Filtering**  
+Select **AMERICAS, EUROPE, ASIA, SEA** to analyse localised metas  
 
-### 🎨 **Interactive UI**  
-✔️ Hover for **unit/item tooltips**, filter compositions, and visualize data **with graphs**  
+### **Interactive UI**  
+Hover for **unit/item tooltips**, filter compositions, and visualize data **with graphs**  
 
 ---
 
