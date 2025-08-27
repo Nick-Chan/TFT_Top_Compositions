@@ -12,7 +12,7 @@ namespace TFT.Services
         public RiotApiService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _apiKey = "RGAPI-70f0148b-5088-4bec-826f-373b25612a83"; // API Key
+            _apiKey = "RGAPI-fabe8690-4e1d-4881-995c-5dabadf2d199"; // API Key
         }
 
         // REGIONS: BR1, EUN1, EUW1, JP1, KR, LA1, LA2, ME1, NA1, OC1, PH2, RU, SG2, TH2, TR1, TW2, VN2

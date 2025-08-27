@@ -2,7 +2,6 @@
 using System.Text.Json;
 using System.Threading.Tasks;
 using TFT.Services;
-
 using TFT.Models;
 using TFT.Data;
 using Polly;
@@ -68,149 +67,50 @@ namespace TFT.Controllers
                 var rateLimiter = new ApiRateLimiter();
                 int apiLogCount = 0;
 
-                // Dictionary mapping for Traits
-                var traitNameMap = new Dictionary<string, string>
-                {
-                    { "TFT13_Academy", "Academy" },
-                    { "TFT13_Ambusher", "Ambusher" },
-                    { "TFT13_Martialist", "Artillerist" },
-                    { "TFT13_Hextech", "Automata" },
-                    { "TFT13_Cabal", "Black Rose" },
-                    { "TFT13_Bruiser", "Bruiser" },
-                    { "TFT13_Crime", "Chem-Baron" },
-                    { "TFT13_Warband", "Conqueror" },
-                    { "TFT13_Infused", "Dominator" },
-                    { "TFT13_Ambassador", "Emissary" },
-                    { "TFT13_Squad", "Enforcer" },
-                    { "TFT13_Experiment", "Experiment" },
-                    { "TFT13_Family", "Family" },
-                    { "TFT13_Hoverboard", "Firelight" },
-                    { "TFT13_FormSwapper", "Form Swapper" },
-                    { "TFT13_HighRoller", "High Roller" },
-                    { "TFT13_Pugilist", "Pit Fighter" },
-                    { "TFT13_Challenger", "Quickstriker" },
-                    { "TFT13_Rebel", "Rebel" },
-                    { "TFT13_Scrap", "Scrap" },
-                    { "TFT13_Titan", "Sentinel" },
-                    { "TFT13_Sniper", "Sniper" },
-                    { "TFT13_Sorcerer", "Sorcerer" },
-                    { "TFT13_Teamup_UnlikelyDuo", "Unlikely Duo" },
-                    { "TFT13_Invoker", "Visionary" },
-                    { "TFT13_Watcher", "Watcher" },
-                    { "TFT13_JunkerKing", "Junker King" }
-                };
+                // Read the TFT traits JSON file
+                var traitsJson = System.IO.File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "GameData", "tft-trait.json"));
 
-                // Dictionary mapping for Units
-                var unitNameMap = new Dictionary<string, string>
-                {
-                    { "TFT13_Akali", "Akali" },
-                    { "TFT13_Ambessa", "Ambessa" },
-                    { "TFT13_Amumu", "Amumu" },
-                    { "TFT13_Blitzcrank", "Blitzcrank" },
-                    { "TFT13_Caitlyn", "Caitlyn" },
-                    { "TFT13_Camille", "Camille" },
-                    { "TFT13_Cassiopeia", "Cassiopeia" },
-                    { "TFT13_Corki", "Corki" },
-                    { "TFT13_Darius", "Darius" },
-                    { "TFT13_DrMundo", "Dr Mundo" },
-                    { "TFT13_Draven", "Draven" },
-                    { "TFT13_Ekko", "Ekko" },
-                    { "tft13_elise", "Elise" },
-                    { "TFT13_Elise", "Elise" },
-                    { "TFT13_Ezreal", "Ezreal" },
-                    { "TFT13_Gangplank", "Gangplank" },
-                    { "TFT13_Garen", "Garen" },
-                    { "TFT13_Heimerdinger", "Heimerdinger" },
-                    { "TFT13_Illaoi", "Illaoi" },
-                    { "TFT13_Irelia", "Irelia" },
-                    { "TFT13_Jayce", "Jayce" },
-                    { "TFT13_Jinx", "Jinx" },
-                    { "tft13_jinx", "Jinx" },
-                    { "TFT13_KogMaw", "Kog'Maw" },
-                    { "TFT13_LeBlanc", "LeBlanc" },
-                    { "TFT13_Leona", "Leona" },
-                    { "TFT13_Beardy", "Loris" },
-                    { "TFT13_Lux", "Lux" },
-                    { "TFT13_Shooter", "Maddie" },
-                    { "TFT13_Malzahar", "Malzahar" },
-                    { "TFT13_MissMage", "Mel" },
-                    { "TFT13_Mordekaiser", "Mordekaiser" },
-                    { "TFT13_Morgana", "Morgana" },
-                    { "TFT13_Nami", "Nami" },
-                    { "TFT13_Nocturne", "Nocturne" },
-                    { "TFT13_NunuWillump", "Nunu Willump" },
-                    { "TFT13_Blue", "Powder" },
-                    { "TFT13_Rell", "Rell" },
-                    { "TFT13_RenataGlasc", "Renata Glasc" },
-                    { "TFT13_Chainsaw", "Renni" },
-                    { "TFT13_Rumble", "Rumble" },
-                    { "TFT13_FlyGuy", "Scar" },
-                    { "TFT13_Sett", "Sett" },
-                    { "TFT13_Lieutenant", "Sevika" },
-                    { "TFT13_Silco", "Silco" },
-                    { "TFT13_Singed", "Singed" },
-                    { "TFT13_Gremlin", "Smeech" },
-                    { "TFT13_Fish", "Steb" },
-                    { "tft13_swain", "Swain" },
-                    { "TFT13_Swain", "Swain" },
-                    { "TFT13_Tristana", "Tristana" },
-                    { "TFT13_Trundle", "Trundle" },
-                    { "TFT13_TwistedFate", "Twisted Fate" },
-                    { "TFT13_Twitch", "Twitch" },
-                    { "TFT13_Urgot", "Urgot" },
-                    { "TFT13_Prime", "Vander" },
-                    { "TFT13_Vex", "Vex" },
-                    { "TFT13_Vi", "Vi" },
-                    { "TFT13_Viktor", "Viktor" },
-                    { "TFT13_Red", "Violet" },
-                    { "TFT13_Vladimir", "Vladimir" },
-                    { "TFT13_Warwick", "Warwick" },
-                    { "TFT13_Zeri", "Zeri" },
-                    { "TFT13_Ziggs", "Ziggs" },
-                    { "TFT13_Zoe", "Zoe" },
-                    { "TFT13_Zyra", "Zyra" }
-                };
+                // Deserialize to full objects
+                var traitRoot = JsonSerializer.Deserialize<DDragonRoot<TftTraitData>>(
+                    traitsJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                // Dictionary mapping for Items
-                var itemNameMap = new Dictionary<string, string>
-                {
-                    { "TFT_Item_AdaptiveHelm", "Adaptive Helm" },
-                    { "TFT_Item_ArchangelsStaff", "Archangel's Staff" },
-                    { "TFT_Item_Bloodthirster", "Bloodthirster" },
-                    { "TFT_Item_BlueBuff", "Blue Buff" },
-                    { "TFT_Item_BrambleVest", "Bramble Vest" },
-                    { "TFT_Item_Crownguard", "Crownguard" },
-                    { "TFT_Item_Deathblade", "Deathblade" },
-                    { "TFT_Item_DragonsClaw", "Dragon's Claw" },
-                    { "TFT_Item_GuardianAngel", "Edge of Night" },
-                    { "TFT_Item_SpectralGauntlet", "Evenshroud" },
-                    { "TFT_Item_GargoyleStoneplate", "Gargoyle Stoneplate" },
-                    { "TFT_Item_MadredsBloodrazor", "Giant Slayer" },
-                    { "TFT_Item_PowerGauntlet", "Guardbreaker" },
-                    { "TFT_Item_GuinsoosRageblade", "Guinsoo's Rageblade" },
-                    { "TFT_Item_UnstableConcoction", "Hand of Justice" },
-                    { "TFT_Item_HextechGunblade", "Hextech Gunblade" },
-                    { "TFT_Item_InfinityEdge", "Infinity Edge" },
-                    { "TFT_Item_IonicSpark", "Ionic Spark" },
-                    { "TFT_Item_JeweledGauntlet", "Jeweled Gauntlet" },
-                    { "TFT_Item_LastWhisper", "Last Whisper" },
-                    { "TFT_Item_Morellonomicon", "Morellonomicon" },
-                    { "TFT_Item_Leviathan", "Nashor's Tooth" },
-                    { "TFT_Item_FrozenHeart", "Protector's Vow" },
-                    { "TFT_Item_Quicksilver", "Quicksilver" },
-                    { "TFT_Item_RabadonsDeathcap", "Rabadon's Deathcap" },
-                    { "TFT_Item_RapidFireCannon", "Red Buff" },
-                    { "TFT_Item_Redemption", "Redemption" },
-                    { "TFT_Item_RunaansHurricane", "Runaan's Hurricane" },
-                    { "TFT_Item_SpearOfShojin", "Spear of Shojin" },
-                    { "TFT_Item_StatikkShiv", "Statikk Shiv" },
-                    { "TFT_Item_NightHarvester", "Steadfast Heart" },
-                    { "TFT_Item_SteraksGage", "Sterak's Gage" },
-                    { "TFT_Item_RedBuff", "Sunfire Cape" },
-                    { "TFT_Item_ThiefsGloves", "Thief's Gloves" },
-                    { "TFT_Item_TitansResolve", "Titan's Resolve" },
-                    { "TFT_Item_WarmogsArmor", "Warmog's Armor" }
-                };
+                // Create a dictionary mapping id -> name
+                var traitNameMap = traitRoot?.data?.Values.ToDictionary(
+                    t => t.id,
+                    t => t.name,
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+                // Read the TFT champion JSON file
+                var unitsJson = System.IO.File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "GameData", "tft-champion.json"));
+
+                // Deserialize to full objects
+                var unitRoot = JsonSerializer.Deserialize<DDragonRoot<TftUnitData>>(
+                    unitsJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                // Create a dictionary mapping id -> name
+                var unitNameMap = unitRoot?.data?.Values.ToDictionary(
+                    u => u.id,
+                    u => u.name,
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+                // Read the tft item JSON file
+                var itemsJson = System.IO.File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "GameData", "tft-item.json"));
+
+                // Deserialize to full objects
+                var itemRoot = JsonSerializer.Deserialize<DDragonRoot<TftItemData>>(
+                    itemsJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                // Create a dictionary mapping id -> name
+                var itemNameMap = itemRoot?.data?.Values.ToDictionary(
+                    i => i.id,
+                    i => i.name,
+                    StringComparer.OrdinalIgnoreCase
+                );
 
                 // Start time tracking for the entire process
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -650,4 +550,74 @@ namespace TFT.Controllers
             }
         }
     }
+
+    // dragontail
+    public class DDragonRoot<T>
+    {
+        public string type { get; set; }
+        public string version { get; set; }
+        public Dictionary<string, T> data { get; set; }
+    }
+
+    // GameData/tft-champion.json
+    public class TftUnitImage
+    {
+        public string full { get; set; }
+        public string sprite { get; set; }
+        public string group { get; set; }
+        public int x { get; set; }
+        public int y { get; set; }
+        public int w { get; set; }
+        public int h { get; set; }
+    }
+
+    // GameData/tft-champion.json
+    public class TftUnitData
+    {
+        public string id { get; set; }
+        public string name { get; set; }
+        public int tier { get; set; }
+        public TftUnitImage image { get; set; }
+    }
+
+    // GameData/tft-trait.json
+    public class TftTraitImage
+    {
+        public string full { get; set; }
+        public string sprite { get; set; }
+        public string group { get; set; }
+        public int x { get; set; }
+        public int y { get; set; }
+        public int w { get; set; }
+        public int h { get; set; }
+    }
+
+    // GameData/tft-trait.json
+    public class TftTraitData
+    {
+        public string id { get; set; }
+        public string name { get; set; }
+        public TftTraitImage image { get; set; }
+    }
+
+    // GameData/tft-item.json
+    public class TftItemData
+    {
+        public string id { get; set; }
+        public string name { get; set; }
+        public TftImageData image { get; set; }
+    }
+
+    // GameData/tft-item.json
+    public class TftImageData
+    {
+        public string full { get; set; }
+        public string sprite { get; set; }
+        public string group { get; set; }
+        public int x { get; set; }
+        public int y { get; set; }
+        public int w { get; set; }
+        public int h { get; set; }
+    }
+
 }
