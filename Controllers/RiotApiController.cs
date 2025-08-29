@@ -207,107 +207,100 @@ namespace TFT.Controllers
                                     {
                                         if (unitNameMap.TryGetValue(unit.character_id, out var mappedName))
                                         {
-                                            if (unit.character_id != "TFT13_JayceSummon" && unit.character_id != "TFT13_Sion")
+                                            unitCharacterIds += mappedName + ", ";
+
+                                            // Add to UnitStats table
+
+                                            var unitStats = new UnitStat
                                             {
-                                                unitCharacterIds += mappedName + ", ";
+                                                Unit = mappedName,
+                                                Trait = traitName,
+                                                Items = unit.itemNames != null ? unit.itemNames.Count : 0,
+                                                Level = unit.tier,
+                                                Placement = participant.placement,
+                                                DateTime = DateTime.Now
+                                            };
 
-                                                // Add to UnitStats table
+                                            _context.UnitStats.Add(unitStats);
 
-                                                var unitStats = new UnitStat
+                                            if (unit.itemNames != null)
+                                            {
+                                                foreach (var item in unit.itemNames)
                                                 {
-                                                    Unit = mappedName,
-                                                    Trait = traitName,
-                                                    Items = unit.itemNames != null ? unit.itemNames.Count : 0,
-                                                    Level = unit.tier,
-                                                    Placement = participant.placement,
-                                                    DateTime = DateTime.Now
-                                                };
-
-                                                _context.UnitStats.Add(unitStats);
-
-                                                if (unit.itemNames != null)
-                                                {
-                                                    foreach (var item in unit.itemNames)
+                                                    // Map item name & skip if the item is not in the map
+                                                    if (!itemNameMap.TryGetValue(item, out var itemName))
                                                     {
-                                                        // Map item name & skip if the item is not in the map
-                                                        if (!itemNameMap.TryGetValue(item, out var itemName))
-                                                        {
-                                                            continue;
-                                                        }
-
-                                                        if (item == "TFT_Item_ThiefsGloves")
-                                                        {
-                                                            var thiefGlovesItem = new Item
-                                                            {
-                                                                Unit = mappedName,
-                                                                ItemName = itemName,
-                                                                Placement = participant.placement,
-                                                                DateTime = DateTime.Now
-                                                            };
-
-                                                            _context.Items.Add(thiefGlovesItem);
-
-                                                            break;
-                                                        }
-                                                        else
-                                                        {
-                                                            var items = new Item
-                                                            {
-                                                                Unit = mappedName,
-                                                                ItemName = itemName,
-                                                                Placement = participant.placement,
-                                                                DateTime = DateTime.Now
-                                                            };
-
-                                                            _context.Items.Add(items);
-                                                        }  
+                                                        continue;
                                                     }
+
+                                                    if (item == "TFT_Item_ThiefsGloves")
+                                                    {
+                                                        var thiefGlovesItem = new Item
+                                                        {
+                                                            Unit = mappedName,
+                                                            ItemName = itemName,
+                                                            Placement = participant.placement,
+                                                            DateTime = DateTime.Now
+                                                        };
+
+                                                        _context.Items.Add(thiefGlovesItem);
+
+                                                        break;
+                                                    }
+                                                    else
+                                                    {
+                                                        var items = new Item
+                                                        {
+                                                            Unit = mappedName,
+                                                            ItemName = itemName,
+                                                            Placement = participant.placement,
+                                                            DateTime = DateTime.Now
+                                                        };
+
+                                                        _context.Items.Add(items);
+                                                    }  
                                                 }
                                             }
                                         }
                                         else
                                         {
-                                            // Fallback if the name is not found in the dictionary
-                                            if (unit.character_id != "TFT13_JayceSummon" && unit.character_id != "TFT13_Sion")
+                                            unitCharacterIds += unit.character_id + ", ";
+
+                                            if (unit.itemNames != null)
                                             {
-                                                unitCharacterIds += unit.character_id + ", ";
-
-                                                if (unit.itemNames != null)
+                                                foreach (var item in unit.itemNames)
                                                 {
-                                                    foreach (var item in unit.itemNames)
+                                                    // Map item name & skip if the item is not in the map
+                                                    if (!itemNameMap.TryGetValue(item, out var itemName))
                                                     {
-                                                        // Map item name & skip if the item is not in the map
-                                                        if (!itemNameMap.TryGetValue(item, out var itemName))
+                                                        continue;
+                                                    }
+
+                                                    if (item == "TFT_Item_ThiefsGloves")
+                                                    {
+                                                        var thiefGlovesItem = new Item
                                                         {
-                                                            continue;
-                                                        }
+                                                            Unit = unit.character_id,
+                                                            ItemName = itemName,
+                                                            Placement = participant.placement,
+                                                            DateTime = DateTime.Now
+                                                        };
 
-                                                        if (item == "TFT_Item_ThiefsGloves")
+                                                        _context.Items.Add(thiefGlovesItem);
+
+                                                        break;
+                                                    }
+                                                    else
+                                                    {
+                                                        var items = new Item
                                                         {
-                                                            var thiefGlovesItem = new Item
-                                                            {
-                                                                Unit = unit.character_id,
-                                                                ItemName = itemName,
-                                                                Placement = participant.placement,
-                                                                DateTime = DateTime.Now
-                                                            };
+                                                            Unit = unit.character_id,
+                                                            ItemName = itemName,
+                                                            Placement = participant.placement,
+                                                            DateTime = DateTime.Now
+                                                        };
 
-                                                            _context.Items.Add(thiefGlovesItem);
-
-                                                            break;
-                                                        }
-                                                        else
-                                                        {
-                                                            var items = new Item
-                                                            {
-                                                                Unit = unit.character_id,
-                                                                ItemName = itemName,
-                                                                Placement = participant.placement,
-                                                                DateTime = DateTime.Now
-                                                            };
-
-                                                            _context.Items.Add(items);
-                                                        }
+                                                        _context.Items.Add(items);
                                                     }
                                                 }
                                             }
