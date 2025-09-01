@@ -4,9 +4,7 @@ A Lightweight **Teamfight Tactics (TFT) Analyser** that helps high-level players
 
 This tool provides insights into **meta compositions, item efficiencies, unit synergies, and win rates**.
 
-Pulls from RIOT TFT Developer API.
-
-TODO: SET15
+Live match data from Riot TFT Developer API. Set data from Riot Data Dragon.
 
 ---
 
