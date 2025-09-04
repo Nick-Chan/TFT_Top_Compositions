@@ -47,6 +47,7 @@ namespace TFT.Controllers
             return Ok(data);
         }
 
+
         [HttpGet("match/{matchId}")]
         public async Task<IActionResult> GetMatchDetails(string region, string matchId)
         {
@@ -126,7 +127,7 @@ namespace TFT.Controllers
                 var jsonTopPlayersResponse = await _riotApiService.GetTopPlayersAsync(region);
                 var players = JsonSerializer.Deserialize<Models.TopPlayers>(jsonTopPlayersResponse);
 
-                var topSummonerIds = players?.entries.Take(playerCount).Select(entry => entry.summonerId).ToList();
+                var topSummonerIds = players?.entries.Take(playerCount).Select(entry => entry.puuid).ToList();
 
                 // If no players are found
                 if (topSummonerIds == null || !topSummonerIds.Any())
@@ -135,22 +136,8 @@ namespace TFT.Controllers
                 }
 
                 // Iterate through the summonerIds and process each one
-                foreach (var summonerId in topSummonerIds)
+                foreach (var puuid in topSummonerIds)
                 {
-                    await HandleRateLimitAsync(rateLimiter);
-                    // Increment API call counter and get summoner details
-                    rateLimiter.ApiCallCount++;
-                    apiLogCount++;
-                    var jsonSummonerDetailsResponse = await _riotApiService.GetSummonerDetailsAsync(region, summonerId);
-                    var summonerDetails = JsonSerializer.Deserialize<Models.SummonerDetails>(jsonSummonerDetailsResponse);
-
-                    // Get the puuid of the player
-                    var puuid = summonerDetails?.puuid;
-                    if (string.IsNullOrEmpty(puuid))
-                    {
-                        continue;
-                    }
-
                     await HandleRateLimitAsync(rateLimiter);
                     // Increment API call counter and get match IDs
                     rateLimiter.ApiCallCount++;
@@ -218,7 +205,7 @@ namespace TFT.Controllers
                                                 Items = unit.itemNames != null ? unit.itemNames.Count : 0,
                                                 Level = unit.tier,
                                                 Placement = participant.placement,
-                                                DateTime = DateTime.Now
+                                                DateTime = DateTime.UtcNow
                                             };
 
                                             _context.UnitStats.Add(unitStats);
@@ -240,7 +227,7 @@ namespace TFT.Controllers
                                                             Unit = mappedName,
                                                             ItemName = itemName,
                                                             Placement = participant.placement,
-                                                            DateTime = DateTime.Now
+                                                            DateTime = DateTime.UtcNow
                                                         };
 
                                                         _context.Items.Add(thiefGlovesItem);
@@ -254,7 +241,7 @@ namespace TFT.Controllers
                                                             Unit = mappedName,
                                                             ItemName = itemName,
                                                             Placement = participant.placement,
-                                                            DateTime = DateTime.Now
+                                                            DateTime = DateTime.UtcNow
                                                         };
 
                                                         _context.Items.Add(items);
@@ -283,7 +270,7 @@ namespace TFT.Controllers
                                                             Unit = unit.character_id,
                                                             ItemName = itemName,
                                                             Placement = participant.placement,
-                                                            DateTime = DateTime.Now
+                                                            DateTime = DateTime.UtcNow
                                                         };
 
                                                         _context.Items.Add(thiefGlovesItem);
@@ -297,7 +284,7 @@ namespace TFT.Controllers
                                                             Unit = unit.character_id,
                                                             ItemName = itemName,
                                                             Placement = participant.placement,
-                                                            DateTime = DateTime.Now
+                                                            DateTime = DateTime.UtcNow
                                                         };
 
                                                         _context.Items.Add(items);
@@ -329,7 +316,15 @@ namespace TFT.Controllers
                 }
 
                 // Save all changes to the database
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex)
+                {
+                    var msg = ex.InnerException?.Message ?? ex.Message;
+                    return StatusCode(500, $"EF Save error: {msg}");
+                }
 
                 // Stop time tracking
                 stopwatch.Stop();

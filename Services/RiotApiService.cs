@@ -1,6 +1,5 @@
 ﻿using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace TFT.Services
 {
@@ -8,12 +7,6 @@ namespace TFT.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
-
-        public RiotApiService(HttpClient httpClient, IConfiguration config)
-        {
-            _httpClient = httpClient;
-            _apiKey = config["RiotApi:ApiKey"]; ; // API Key
-        }
 
         // REGIONS: BR1, EUN1, EUW1, JP1, KR, LA1, LA2, ME1, NA1, OC1, PH2, RU, SG2, TH2, TR1, TW2, VN2
 
@@ -25,73 +18,102 @@ namespace TFT.Services
 
         // SEA: OC1 (Oceania), PH2* (Philippines), SG2 (Singapore), TH2* (Thailand), VN2* (Vietnam)
 
-        Dictionary<string, string> _region = new Dictionary<string, string>() {
-            { "BR1", "AMERICAS"},
-            { "LA1", "AMERICAS"},
-            { "LA2", "AMERICAS"},
-            { "NA1", "AMERICAS"},
-            { "EUN1", "EUROPE"},
-            { "EUW1", "EUROPE"},
-            { "VN2", "SEA"}};
-
-        public async Task<string> GetTopPlayersAsync(string region)
+        // Map platform to region group (for match/account APIs)
+        private static readonly Dictionary<string, string> RegionGroups = new()
         {
-            string url = $"https://{region}.api.riotgames.com/tft/league/v1/challenger?queue=RANKED_TFT&api_key={_apiKey}";
-           
-            var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
+            { "BR1", "americas" },
+            { "LA1", "americas" },
+            { "LA2", "americas" },
+            { "NA1", "americas" },
+            { "EUN1", "europe" },
+            { "EUW1", "europe" },
+            { "RU", "europe" },
+            { "TR1", "europe" },
+            { "KR", "asia" },
+            { "JP1", "asia" },
+            { "TW2", "asia" },
+            { "VN2", "sea" },
+            { "SG2", "sea" },
+            { "PH2", "sea" },
+            { "TH2", "sea" },
+            { "OC1", "sea" },
+            { "ME1", "europe" } // special case
+        };
 
-            return await response.Content.ReadAsStringAsync();
+        public RiotApiService(HttpClient httpClient, IConfiguration config)
+        {
+            _httpClient = httpClient;
+            _apiKey = config["RiotApi:ApiKey"] ?? throw new InvalidOperationException("Riot API key missing");
+
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Riot-Token", _apiKey);
         }
 
-        public async Task<string> GetSummonerDetailsAsync(string region, string summonerId)
+        // Platform-routed: Challenger league
+        public async Task<string> GetTopPlayersAsync(string platform)
         {
-            string url = $"https://{region}.api.riotgames.com/tft/summoner/v1/summoners/{summonerId}?api_key={_apiKey}";
+            platform = platform.ToLowerInvariant();
+            var url = $"https://{platform}.api.riotgames.com/tft/league/v1/challenger?queue=RANKED_TFT";
 
-            var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
+            using var resp = await _httpClient.GetAsync(url);
+            var body = await resp.Content.ReadAsStringAsync();
 
-            return await response.Content.ReadAsStringAsync();
+            if (!resp.IsSuccessStatusCode)
+                throw new Exception($"Riot API error {resp.StatusCode}: {body}");
+
+            return body;
         }
 
-        public async Task<string[]> GetMatchIdsAsync(string region, string puuid, int start, long startTime, int count)
+        // Platform-routed: Summoner details
+        public async Task<string> GetSummonerDetailsAsync(string platform, string summonerId)
         {
-            string regionGroup = "";
-            
-            if (_region.ContainsKey(region))
-            {
-                regionGroup = _region[region];
-            }
-            else
-            {}
-            
-            string url = $"https://{regionGroup}.api.riotgames.com/tft/match/v1/matches/by-puuid/{puuid}/ids?start={start}&startTime={startTime}&count={count}&api_key={_apiKey}";
+            platform = platform.ToLowerInvariant();
+            var url = $"https://{platform}.api.riotgames.com/tft/summoner/v1/summoners/by-puuid/{summonerId}";
 
-            var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
+            using var resp = await _httpClient.GetAsync(url);
+            var body = await resp.Content.ReadAsStringAsync();
 
-            // Deserialize the JSON response into a string array
-            var matchIdsJson = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<string[]>(matchIdsJson);
+            if (!resp.IsSuccessStatusCode)
+                throw new Exception($"Riot API error {resp.StatusCode}: {body}");
+
+            return body;
         }
 
-        public async Task<string> GetMatchDetailsAsync(string region, string matchId)
+        // Regional-routed: Match IDs
+        public async Task<string[]> GetMatchIdsAsync(string platform, string puuid, int start, long startTime, int count)
         {
-            string regionGroup = "";
+            platform = platform.ToUpperInvariant(); // our map keys are uppercase
+            if (!RegionGroups.TryGetValue(platform, out var regionGroup))
+                throw new ArgumentException($"Unknown platform: {platform}");
 
-            if (_region.ContainsKey(region))
-            {
-                regionGroup = _region[region];
-            }
-            else
-            { }
+            var url = $"https://{regionGroup}.api.riotgames.com/tft/match/v1/matches/by-puuid/{puuid}/ids?start={start}&startTime={startTime}&count={count}";
 
-            string url = $"https://{regionGroup}.api.riotgames.com/tft/match/v1/matches/{matchId}?api_key={_apiKey}";
+            using var resp = await _httpClient.GetAsync(url);
+            var body = await resp.Content.ReadAsStringAsync();
 
-            var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
+            if (!resp.IsSuccessStatusCode)
+                throw new Exception($"Riot API error {resp.StatusCode}: {body}");
 
-            return await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<string[]>(body) ?? Array.Empty<string>();
         }
+
+        // Regional-routed: Match details
+        public async Task<string> GetMatchDetailsAsync(string platform, string matchId)
+        {
+            platform = platform.ToUpperInvariant();
+            if (!RegionGroups.TryGetValue(platform, out var regionGroup))
+                throw new ArgumentException($"Unknown platform: {platform}");
+
+            var url = $"https://{regionGroup}.api.riotgames.com/tft/match/v1/matches/{matchId}";
+
+            using var resp = await _httpClient.GetAsync(url);
+            var body = await resp.Content.ReadAsStringAsync();
+
+            if (!resp.IsSuccessStatusCode)
+                throw new Exception($"Riot API error {resp.StatusCode}: {body}");
+
+            return body;
+        }
+
     }
 }

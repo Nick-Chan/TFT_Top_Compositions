@@ -14,7 +14,7 @@ namespace TFT.Models
 
     public class LeagueEntry
     {
-        public string summonerId { get; set; }
+        public string puuid { get; set; }
         public int leaguePoints { get; set; }
         public string rank { get; set; }
         public int wins { get; set; }

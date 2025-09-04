@@ -13,11 +13,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient<RiotApiService>();
 
-
-// SQLite
-//builder.Services.AddDbContext<TftContext>(options =>
-//    options.UseSqlite("Data Source=TftAnalyzer.db"));
-
 // PostgreSQL
 builder.Services.AddDbContext<TftContext>(options =>
     options.UseNpgsql(connectionString));
@@ -42,6 +37,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<TftContext>();
+    db.Database.Migrate();
 }
 
 app.UseHttpsRedirection();
