@@ -12,12 +12,8 @@ namespace TFT.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.EnsureSchema(
-                name: "tft_asia");
-
             migrationBuilder.CreateTable(
                 name: "Items",
-                schema: "tft_asia",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -25,7 +21,8 @@ namespace TFT.Migrations
                     Unit = table.Column<string>(type: "text", nullable: false),
                     ItemName = table.Column<string>(type: "text", nullable: false),
                     Placement = table.Column<int>(type: "integer", nullable: false),
-                    DateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    DateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Region = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -34,14 +31,14 @@ namespace TFT.Migrations
 
             migrationBuilder.CreateTable(
                 name: "TeamPlacements",
-                schema: "tft_asia",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Placement = table.Column<int>(type: "integer", nullable: false),
                     TraitComposition = table.Column<string>(type: "text", nullable: false),
-                    UnitComposition = table.Column<string>(type: "text", nullable: false)
+                    UnitComposition = table.Column<string>(type: "text", nullable: false),
+                    Region = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -50,7 +47,6 @@ namespace TFT.Migrations
 
             migrationBuilder.CreateTable(
                 name: "UnitStats",
-                schema: "tft_asia",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -60,7 +56,8 @@ namespace TFT.Migrations
                     Items = table.Column<int>(type: "integer", nullable: false),
                     Placement = table.Column<int>(type: "integer", nullable: false),
                     Level = table.Column<int>(type: "integer", nullable: false),
-                    DateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    DateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Region = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -72,16 +69,13 @@ namespace TFT.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Items",
-                schema: "tft_asia");
+                name: "Items");
 
             migrationBuilder.DropTable(
-                name: "TeamPlacements",
-                schema: "tft_asia");
+                name: "TeamPlacements");
 
             migrationBuilder.DropTable(
-                name: "UnitStats",
-                schema: "tft_asia");
+                name: "UnitStats");
         }
     }
 }

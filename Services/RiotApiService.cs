@@ -37,17 +37,28 @@ namespace TFT.Services
             { "PH2", "sea" },
             { "TH2", "sea" },
             { "OC1", "sea" },
-            { "ME1", "europe" } // special case
+            { "ME1", "europe" }
         };
 
         public RiotApiService(HttpClient httpClient, IConfiguration config)
         {
             _httpClient = httpClient;
-            _apiKey = config["RiotApi:ApiKey"] ?? throw new InvalidOperationException("Riot API key missing");
+            _apiKey = (config["RiotApi:ApiKey"]
+                      ?? throw new InvalidOperationException("Riot API key missing")).Trim();
 
             _httpClient.DefaultRequestHeaders.Clear();
+
+            // Required headers
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36");
+            _httpClient.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
+            _httpClient.DefaultRequestHeaders.AcceptCharset.ParseAdd("utf-8");
+            _httpClient.DefaultRequestHeaders.TryAddWithoutValidation(
+                "Origin", "https://developer.riotgames.com");
+
             _httpClient.DefaultRequestHeaders.Add("X-Riot-Token", _apiKey);
         }
+
 
         // Platform-routed: Challenger league
         public async Task<string> GetTopPlayersAsync(string platform)

@@ -15,35 +15,11 @@ namespace TFT.Data
 
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=tft_analyzer;Username=tft_user;Password=tftpassword123");
-            }
-        }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasDefaultSchema("tft_europe"); // Default schema
-
-            modelBuilder.Entity<TeamPlacement>().ToTable("TeamPlacements", "tft_europe");
-            modelBuilder.Entity<Item>().ToTable("Items", "tft_europe");
-            modelBuilder.Entity<UnitStat>().ToTable("UnitStats", "tft_europe");
-
-            modelBuilder.Entity<TeamPlacement>().ToTable("TeamPlacements", "tft_americas");
-            modelBuilder.Entity<Item>().ToTable("Items", "tft_americas");
-            modelBuilder.Entity<UnitStat>().ToTable("UnitStats", "tft_americas");
-
-            modelBuilder.Entity<TeamPlacement>().ToTable("TeamPlacements", "tft_sea");
-            modelBuilder.Entity<Item>().ToTable("Items", "tft_sea");
-            modelBuilder.Entity<UnitStat>().ToTable("UnitStats", "tft_sea");
-
-            modelBuilder.Entity<TeamPlacement>().ToTable("TeamPlacements", "tft_asia");
-            modelBuilder.Entity<Item>().ToTable("Items", "tft_asia");
-            modelBuilder.Entity<UnitStat>().ToTable("UnitStats", "tft_asia");
-
-            modelBuilder.Entity<GlobalTeamPlacement>().ToView("GlobalTeamPlacements").HasNoKey();
+            modelBuilder.Entity<UnitStat>().ToTable("UnitStats");
+            modelBuilder.Entity<Item>().ToTable("Items");
+            modelBuilder.Entity<TeamPlacement>().ToTable("TeamPlacements");
         }
     }
 
@@ -55,6 +31,7 @@ namespace TFT.Data
         public int Placement { get; set; }
         public string TraitComposition { get; set; }
         public string UnitComposition { get; set; }
+        public string Region { get; set; }
     }
 
     public class Item
@@ -66,6 +43,7 @@ namespace TFT.Data
         public string ItemName { get; set; }
         public int Placement { get; set; }
         public DateTime DateTime { get; set; }
+        public string Region { get; set; }
     }
 
     public class UnitStat
@@ -79,6 +57,7 @@ namespace TFT.Data
         public int Placement { get; set; }
         public int Level { get; set; }
         public DateTime DateTime { get; set; }
+        public string Region { get; set; }
     }
 
     public class GlobalTeamPlacement

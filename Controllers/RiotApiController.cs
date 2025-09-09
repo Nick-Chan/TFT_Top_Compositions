@@ -113,6 +113,13 @@ namespace TFT.Controllers
                     StringComparer.OrdinalIgnoreCase
                 );
 
+                // Normalize region platform
+                var platform = (region ?? "").Trim();
+                if (string.IsNullOrEmpty(platform))
+                    return BadRequest("Region/platform is required (e.g., EUW1).");
+
+                var regionValue = platform.ToUpperInvariant();
+
                 // Start time tracking for the entire process
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -205,7 +212,8 @@ namespace TFT.Controllers
                                                 Items = unit.itemNames != null ? unit.itemNames.Count : 0,
                                                 Level = unit.tier,
                                                 Placement = participant.placement,
-                                                DateTime = DateTime.UtcNow
+                                                DateTime = DateTime.UtcNow,
+                                                Region = regionValue
                                             };
 
                                             _context.UnitStats.Add(unitStats);
@@ -227,7 +235,8 @@ namespace TFT.Controllers
                                                             Unit = mappedName,
                                                             ItemName = itemName,
                                                             Placement = participant.placement,
-                                                            DateTime = DateTime.UtcNow
+                                                            DateTime = DateTime.UtcNow,
+                                                            Region = regionValue
                                                         };
 
                                                         _context.Items.Add(thiefGlovesItem);
@@ -241,7 +250,8 @@ namespace TFT.Controllers
                                                             Unit = mappedName,
                                                             ItemName = itemName,
                                                             Placement = participant.placement,
-                                                            DateTime = DateTime.UtcNow
+                                                            DateTime = DateTime.UtcNow,
+                                                            Region = regionValue
                                                         };
 
                                                         _context.Items.Add(items);
@@ -270,7 +280,8 @@ namespace TFT.Controllers
                                                             Unit = unit.character_id,
                                                             ItemName = itemName,
                                                             Placement = participant.placement,
-                                                            DateTime = DateTime.UtcNow
+                                                            DateTime = DateTime.UtcNow,
+                                                            Region = regionValue
                                                         };
 
                                                         _context.Items.Add(thiefGlovesItem);
@@ -284,7 +295,8 @@ namespace TFT.Controllers
                                                             Unit = unit.character_id,
                                                             ItemName = itemName,
                                                             Placement = participant.placement,
-                                                            DateTime = DateTime.UtcNow
+                                                            DateTime = DateTime.UtcNow,
+                                                            Region = regionValue
                                                         };
 
                                                         _context.Items.Add(items);
@@ -303,7 +315,8 @@ namespace TFT.Controllers
                                         {
                                             Placement = participant.placement,
                                             TraitComposition = traitName,
-                                            UnitComposition = unitCharacterIds
+                                            UnitComposition = unitCharacterIds,
+                                            Region = regionValue
                                         };
 
                                         // Add the object to the database

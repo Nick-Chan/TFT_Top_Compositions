@@ -17,37 +17,10 @@ namespace TFT.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasDefaultSchema("tft_europe")
                 .HasAnnotation("ProductVersion", "9.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("TFT.Data.GlobalTeamPlacement", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Placement")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Region")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TraitComposition")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UnitComposition")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.ToTable((string)null);
-
-                    b.ToView("GlobalTeamPlacements", "tft_europe");
-                });
 
             modelBuilder.Entity("TFT.Data.Item", b =>
                 {
@@ -67,13 +40,17 @@ namespace TFT.Migrations
                     b.Property<int>("Placement")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Items", "tft_asia");
+                    b.ToTable("Items", (string)null);
                 });
 
             modelBuilder.Entity("TFT.Data.TeamPlacement", b =>
@@ -87,6 +64,10 @@ namespace TFT.Migrations
                     b.Property<int>("Placement")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("TraitComposition")
                         .IsRequired()
                         .HasColumnType("text");
@@ -97,7 +78,7 @@ namespace TFT.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TeamPlacements", "tft_asia");
+                    b.ToTable("TeamPlacements", (string)null);
                 });
 
             modelBuilder.Entity("TFT.Data.UnitStat", b =>
@@ -120,6 +101,10 @@ namespace TFT.Migrations
                     b.Property<int>("Placement")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Trait")
                         .IsRequired()
                         .HasColumnType("text");
@@ -130,7 +115,7 @@ namespace TFT.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UnitStats", "tft_asia");
+                    b.ToTable("UnitStats", (string)null);
                 });
 #pragma warning restore 612, 618
         }
