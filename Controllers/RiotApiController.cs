@@ -61,7 +61,7 @@ namespace TFT.Controllers
             try
             {
                 // Integers to be set
-                int playerCount = 10; // Number of players to loop through
+                int playerCount = 100; // Number of players to loop through
                 int startTimeDays = -1; // Start time for history of matches
 
                 // Initialize API rate limiter
@@ -204,7 +204,6 @@ namespace TFT.Controllers
                                             unitCharacterIds += mappedName + ", ";
 
                                             // Add to UnitStats table
-
                                             var unitStats = new UnitStat
                                             {
                                                 Unit = mappedName,
@@ -449,6 +448,13 @@ namespace TFT.Controllers
         {
             try
             {
+                // EXCLUDED UNIT LIST
+                var excludedUnits = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "TFT15_Galio",
+                    "Ekko"
+                };
+
                 // Calculate the total number of games for the specific trait composition
                 var totalTraitGames = await _context.TeamPlacements
                     .Where(tp => tp.TraitComposition == traitComposition)
@@ -469,10 +475,25 @@ namespace TFT.Controllers
                         AvgPlacement = g.Average(tp => tp.Placement),
                         PlayRate = (double)g.Count() / totalTraitGames
                     })
-                    .OrderByDescending(result => result.Occurrences)
-                    .ThenBy(result => result.AvgPlacement)
-                    .Take(8) // Limit to top x rows
                     .ToListAsync();
+
+                // Filter excluded units and rebuild
+                results = results
+                    .Select(r => new
+                    {
+                        UnitComposition = string.Join(", ",
+                            r.UnitComposition
+                                .Split(", ", StringSplitOptions.RemoveEmptyEntries)
+                                .Where(u => !excludedUnits.Contains(u))
+                        ),
+                        r.Occurrences,
+                        r.AvgPlacement,
+                        r.PlayRate
+                    })
+                    .OrderByDescending(r => r.Occurrences)
+                    .ThenBy(r => r.AvgPlacement)
+                    .Take(8)
+                    .ToList();
 
                 return Ok(results);
             }
@@ -483,28 +504,147 @@ namespace TFT.Controllers
         }
 
         [HttpGet("best-items-by-placement")]
-        public async Task<IActionResult> GetBestItemsPlacements()
+        public async Task<IActionResult> GetBestItemsPlacements(
+            [FromQuery] string[]? excludeItems = null,
+            [FromQuery] int top = 8,
+            [FromQuery] int minSamples = 1
+        )
         {
             try
             {
-                var results = await _context.Items
+                // EXCLUDED ITEM LIST = ARTIFACTS, RADIANTS, EMBLEMS, TACTITIANS
+                var excludedItems = new HashSet<string>(
+                excludeItems ?? Array.Empty<string>(),
+                StringComparer.OrdinalIgnoreCase
+                )
+                {
+                    "Tactician's Crown",
+                    "Tactician's Cape",
+                    "Tactician's Shield",
+                    "Bastion Emblem",
+                    "Battle Academia Emblem",
+                    "Blighting Jewel",
+                    "Crystal Gambit Emblem",
+                    "Dawncore",
+                    "Death's Defiance",
+                    "Deathfire Grasp",
+                    "Duelist Emblem",
+                    "Edgelord Emblem",
+                    "Executioner Emblem",
+                    "Fishbones",
+                    "Flickerblades",
+                    "Gambler's Blade",
+                    "Gold Collector",
+                    "Heavyweight Emblem",
+                    "Horizon Focus",
+                    "Hullcrusher",
+                    "Infinity Force",
+                    "Innervating Locket",
+                    "Juggernaut Emblem",
+                    "Lich Bane",
+                    "Lightshield Crest",
+                    "Luchador Emblem",
+                    "Luden's Tempest",
+                    "Manazane",
+                    "Mittens",
+                    "Mogul's Mail",
+                    "Prodigy Emblem",
+                    "Protector Emblem",
+                    "Prowler's Claw",
+                    "Radiant Adaptive Helm",
+                    "Radiant Archangel's Staff",
+                    "Radiant Bloodthirster",
+                    "Radiant Blue Buff",
+                    "Radiant Bramble Vest",
+                    "Radiant Crownguard",
+                    "Radiant Deathblade",
+                    "Radiant Dragon's Claw",
+                    "Radiant Edge of Night",
+                    "Radiant Evenshroud",
+                    "Radiant Gargoyle Stoneplate",
+                    "Radiant Giant Slayer",
+                    "Radiant Guinsoo's Rageblade",
+                    "Radiant Hand of Justice",
+                    "Radiant Hextech Gunblade",
+                    "Radiant Infinity Edge",
+                    "Radiant Ionic Spark",
+                    "Radiant Jeweled Gauntlet",
+                    "Radiant Kraken's Fury",
+                    "Radiant Last Whisper",
+                    "Radiant Morellonomicon",
+                    "Radiant Nashor's Tooth",
+                    "Radiant Protector's Vow",
+                    "Radiant Quicksilver",
+                    "Radiant Rabadon's Deathcap",
+                    "Radiant Red Buff",
+                    "Radiant Spear of Shojin",
+                    "Radiant Spirit Visage",
+                    "Radiant Steadfast Heart",
+                    "Radiant Sterak's Gage",
+                    "Radiant Striker's Flail",
+                    "Radiant Sunfire Cape",
+                    "Radiant Thief's Gloves",
+                    "Radiant Titan's Resolve",
+                    "Radiant Void Staff",
+                    "Radiant Warmog's Armor",
+                    "Rapid Firecannon",
+                    "Seeker's Armguard",
+                    "Silvermere Dawn",
+                    "Sniper Emblem",
+                    "Sniper's Focus",
+                    "Sorcerer Emblem",
+                    "Soul Fighter Emblem",
+                    "Spectral Cutlass",
+                    "Star Guardian Emblem",
+                    "Statikk Shiv",
+                    "Strategist Emblem",
+                    "Supreme Cells Emblem",
+                    "Suspicious Trench Coat",
+                    "Talisman Of Ascension",
+                    "The Indomitable",
+                    "Titanic Hydra",
+                    "Trickster's Glass",
+                    "Unending Despair",
+                    "Wit's End",
+                    "Wraith Emblem",
+                    "Zhonya's Paradox",
+                    "B.F. Sword",
+                    "Chain Vest",
+                    "Giant's Belt",
+                    "Needlessly Large Rod",
+                    "Negatron Cloak",
+                    "Recurve Bow",
+                    "Sparring Gloves",
+                    "Spatula",
+                    "Tear of the Goddess",
+                    "Frying Pan"
+                };
+
+                var query = _context.Items
+                    .Where(i => !excludedItems.Contains(i.ItemName));
+
+                var results = await query
                     .GroupBy(item => new { item.Unit, item.ItemName })
                     .Select(g => new
                     {
                         Unit = g.Key.Unit,
                         ItemName = g.Key.ItemName,
-                        AvgPlacement = g.Average(i => i.Placement)
+                        AvgPlacement = g.Average(i => i.Placement),
+                        SampleSize = g.Count()
                     })
-                    .GroupBy(result => result.Unit)
+                    // drop low-sample items
+                    .Where(r => r.SampleSize >= minSamples)
+                    .GroupBy(r => r.Unit)
                     .Select(g => new
                     {
                         Unit = g.Key,
                         Items = g.OrderBy(r => r.AvgPlacement)
-                                 .Take(10) // Limit to top 10 items per unit
+                                 .Take(top)
                                  .Select(r => new
                                  {
                                      ItemName = r.ItemName,
-                                     AvgPlacement = Math.Round(r.AvgPlacement, 2)
+                                     AvgPlacement = Math.Round(r.AvgPlacement, 2),
+                                     SampleSize = r.SampleSize
                                  })
                                  .ToList()
                     })
@@ -517,6 +657,7 @@ namespace TFT.Controllers
                 return StatusCode(500, $"Error: {ex.Message}");
             }
         }
+
 
         public class BestItemResult
         {
